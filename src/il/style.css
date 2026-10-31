@@ -1,0 +1,67 @@
+/* ===== 앱 전환 + 일러스트 화면 ===== */
+.appsw{display:flex;gap:3px;margin:0 8px 0 6px;flex:none}
+.appsw button{width:24px;height:20px;border-radius:3px;border:1px solid transparent;font:700 10px/18px var(--ui);padding:0;cursor:default;letter-spacing:-.3px;opacity:.55}
+.appsw button.ip{background:#0d2b46;color:#5fb2ff;border-color:#2f87e6}
+.appsw button.il{background:#3a2100;color:#ffb13d;border-color:#c97a12}
+.appsw button.on{opacity:1;box-shadow:0 0 0 1px #fff}
+.appsw button:hover{opacity:1}
+#logo{display:none}
+#ilApp{height:100%;display:grid;grid-template-rows:28px 40px minmax(0,1fr);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.ilbar{display:flex;align-items:center;background:var(--shell);border-bottom:1px solid var(--line);min-width:0;overflow:hidden}
+.ilbar .menus{display:flex;min-width:0;overflow-x:auto;scrollbar-width:none}
+.ilbar .mright{margin-left:auto;padding-right:10px;color:var(--text-3);font-size:11px;white-space:nowrap}
+.ilctrl{display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--shell);border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:thin}
+.ilctrl .what{color:var(--text);font-weight:600;min-width:64px}
+#ilMain{display:grid;grid-template-columns:52px minmax(0,1fr) 40px 300px;min-height:0}
+#ilTools{background:var(--shell);border-right:1px solid var(--line);display:grid;grid-template-columns:24px 24px;justify-content:center;align-content:start;gap:1px;padding:6px 0;overflow-y:auto;scrollbar-width:none}
+#ilTools .tbtn{width:24px;height:26px}
+#ilTools .tsep{grid-column:1/-1;width:40px}
+#ilTools .full{grid-column:1/-1;justify-self:center}
+#ilCenter{display:grid;grid-template-rows:26px minmax(0,1fr) 22px;min-width:0;min-height:0}
+.tabsbar{display:flex;align-items:flex-end;background:var(--shell-3);overflow-x:auto;overflow-y:hidden;scrollbar-width:none;border-bottom:1px solid var(--line)}
+#ilWork{position:relative;background:var(--il-paste,#535353);overflow:hidden;min-height:0;touch-action:none}
+#ilSvg{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none}
+#ilWork.outline #ilContent *{fill:none!important;stroke:#000!important;stroke-width:1px!important;vector-effect:non-scaling-stroke;filter:none!important;opacity:1!important}
+#ilWork.outline #ilContent image{opacity:.25!important}
+#ilTextEdit{position:absolute;z-index:5;background:transparent;border:1px dashed rgba(120,170,255,.9);outline:none;resize:none;overflow:hidden;white-space:pre;padding:0;margin:0;caret-color:#2d7be5}
+#ilEmpty{position:absolute;inset:0;display:grid;place-items:center;color:var(--text-2);text-align:center;pointer-events:none}
+#ilEmpty .box{pointer-events:auto;display:grid;gap:14px;justify-items:center;padding:28px 36px;border:1px dashed #777;border-radius:8px;background:#3b3b3b}
+#ilEmpty h2{margin:0;font-size:18px;color:var(--text);font-weight:600}
+#ilEmpty .row{display:flex;gap:8px}
+.status{display:flex;align-items:center;gap:14px;padding:0 6px;background:var(--shell);border-top:1px solid var(--line);color:var(--text-2);font-size:11px;white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
+#ilZoomInp{width:58px;height:18px;background:var(--field-2);border:1px solid #2b2b2b;padding:0 4px;font-size:11px}
+#ilDock{background:var(--shell);border-left:1px solid var(--line);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding-top:6px;gap:2px}
+#ilPanels{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(200px,1.1fr) minmax(200px,1fr);background:var(--shell);min-height:0;min-width:0}
+#ilPanels .ptabs{overflow-x:auto;scrollbar-width:none}
+.fsw{position:relative;width:44px;height:44px;margin:6px auto 2px;grid-column:1/-1}
+.fsw .f,.fsw .s{position:absolute;width:26px;height:26px;border:1px solid #111;cursor:default}
+.fsw .f{left:2px;top:2px;z-index:2;box-shadow:inset 0 0 0 1px #888}
+.fsw .s{left:15px;top:15px;background:transparent!important}
+.fsw .s::after{content:"";position:absolute;inset:6px;background:var(--shell);border:1px solid #111}
+.fsw .front{z-index:3}
+.fsw .none{background:#fff!important}
+.fsw .none::before{content:"";position:absolute;left:-3px;right:-3px;top:50%;height:2px;background:#e33;transform:rotate(-45deg)}
+.fsw .s.none::after{display:none}
+.fswtools{grid-column:1/-1;display:flex;justify-content:center;gap:2px}
+.fswtools button{width:14px;height:14px;padding:0;border:1px solid #222;cursor:default}
+.objrow{display:flex;align-items:center;gap:6px;height:28px;padding-right:8px;border-bottom:1px solid #444;font-size:11.5px;cursor:default}
+.objrow:hover{background:#5a5a5a}
+.objrow.on{background:var(--sel)}
+.objrow .leye{height:100%}
+.objrow .lk{width:20px;display:grid;place-items:center;color:var(--text-2);flex:none}
+.objrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.objrow .tg{width:12px;height:12px;border-radius:50%;border:1px solid #bbb;flex:none}
+.objrow .tg.on{background:#ddd}
+.objrow.layer{background:#4a4a4a;font-weight:600}
+.objrow.layer.on{background:#4f6688}
+.sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(22px,1fr));gap:3px;padding:10px}
+.sw-grid button{aspect-ratio:1;border:1px solid #222;padding:0;cursor:default}
+.sw-grid button:hover{outline:1px solid #fff}
+.pfbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pfbtns button{height:40px;background:#3f3f3f;border:1px solid #333;border-radius:2px;display:grid;place-items:center;color:#ddd;cursor:default}
+.pfbtns button:hover{border-color:var(--accent)}
+.albtns{display:flex;flex-wrap:wrap;gap:2px}
+.miniCol{width:22px;height:22px;border:1px solid #111;cursor:pointer;flex:none;position:relative}
+.miniCol.none{background:#fff!important}
+.miniCol.none::before{content:"";position:absolute;left:-2px;right:-2px;top:50%;height:2px;background:#e33;transform:rotate(-45deg)}
+@media (max-width:900px){#ilMain{grid-template-columns:52px minmax(0,1fr)}#ilDock{display:none}#ilPanels{position:fixed;right:0;top:68px;bottom:0;width:min(300px,86vw);z-index:900;box-shadow:-10px 0 30px rgba(0,0,0,.5);display:none}body.showPanels #ilPanels{display:grid}}

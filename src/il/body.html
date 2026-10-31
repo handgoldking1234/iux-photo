@@ -1,0 +1,52 @@
+<div id="ilApp" hidden>
+  <div id="ilMenubar" class="ilbar">
+    <div class="appsw"></div>
+    <div id="ilMenus" class="menus"></div>
+    <div class="mright"><span class="tag" id="ilEnv"></span></div>
+  </div>
+  <div id="ilCtrl" class="ilctrl"></div>
+  <div id="ilMain">
+    <div id="ilTools"></div>
+    <div id="ilCenter">
+      <div id="ilTabs" class="tabsbar"></div>
+      <div id="ilWork">
+        <svg id="ilSvg" xmlns="http://www.w3.org/2000/svg">
+          <defs id="ilUiDefs">
+            <filter id="ilAbShadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#000" flood-opacity=".45"/></filter>
+            <pattern id="ilGridPat" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="rgba(0,120,255,.18)" stroke-width=".3"/></pattern>
+          </defs>
+          <g id="ilView">
+            <g id="ilBoards"></g>
+            <svg id="ilDocSvg" overflow="visible" x="0" y="0"><g id="ilContent"></g></svg>
+            <rect id="ilGrid" fill="url(#ilGridPat)" pointer-events="none" visibility="hidden"/>
+          </g>
+          <g id="ilOverlay"></g>
+        </svg>
+        <textarea id="ilTextEdit" hidden spellcheck="false"></textarea>
+        <div id="ilEmpty" hidden><div class="box"><h2>열린 문서가 없습니다</h2><div class="muted">SVG 파일이나 이미지를 끌어다 놓아도 열립니다</div><div class="row"><button class="btn pri" data-il="new">새로 만들기</button><button class="btn" data-il="open">열기</button></div></div></div>
+      </div>
+      <div id="ilStatus" class="status"><input id="ilZoomInp" class="inp" aria-label="확대 비율"><span id="ilStAb"></span><span id="ilStTool" class="muted"></span><span id="ilStPos"></span></div>
+    </div>
+    <div id="ilDock"></div>
+    <div id="ilPanels">
+      <div class="pgroup" id="ilPg1">
+        <div class="ptabs"><div class="ptab on" data-iltab="props">속성</div><div class="ptab" data-iltab="layers">레이어</div><div class="ptab" data-iltab="ab">대지</div></div>
+        <div class="pbody" data-ilbody="props" id="ilProps"></div>
+        <div class="pbody" data-ilbody="layers" id="ilLayers" hidden></div>
+        <div class="pbody" data-ilbody="ab" id="ilAbs" hidden></div>
+      </div>
+      <div class="pgroup" id="ilPg2" style="border-bottom:0">
+        <div class="ptabs"><div class="ptab on" data-iltab="color">색상</div><div class="ptab" data-iltab="swatch">견본</div><div class="ptab" data-iltab="stroke">획</div><div class="ptab" data-iltab="align">정렬</div><div class="ptab" data-iltab="pf">패스파인더</div><div class="ptab" data-iltab="type">문자</div><div class="ptab" data-iltab="grad">그레이디언트</div></div>
+        <div class="pbody" data-ilbody="color" id="ilColor"></div>
+        <div class="pbody" data-ilbody="swatch" id="ilSwatch" hidden></div>
+        <div class="pbody" data-ilbody="stroke" id="ilStroke" hidden></div>
+        <div class="pbody" data-ilbody="align" id="ilAlign" hidden></div>
+        <div class="pbody" data-ilbody="pf" id="ilPf" hidden></div>
+        <div class="pbody" data-ilbody="type" id="ilType" hidden></div>
+        <div class="pbody" data-ilbody="grad" id="ilGrad" hidden></div>
+      </div>
+    </div>
+  </div>
+</div>
+<input type="file" id="ilFileIn" accept=".svg,image/*" multiple hidden>
+<input type="file" id="ilPlaceIn" accept=".svg,image/*" hidden>
