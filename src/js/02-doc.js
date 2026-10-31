@@ -1,0 +1,124 @@
+/* ===== 문서 · 레이어 · 히스토리 · 합성 ===== */
+let uid=1;
+const docs=[];let doc=null;
+const BLENDS=[['source-over','표준','normal'],['dissolve','디졸브','dissolve'],null,['darken','어둡게 하기','darken'],['multiply','곱하기','multiply'],['color-burn','색상 번','color burn'],['linear-burn','선형 번','linear burn'],null,['lighten','밝게 하기','lighten'],['screen','스크린','screen'],['color-dodge','색상 닷지','color dodge'],['lighter','선형 닷지(추가)','linear dodge'],null,['overlay','오버레이','overlay'],['soft-light','소프트 라이트','soft light'],['hard-light','하드 라이트','hard light'],null,['difference','차이','difference'],['exclusion','제외','exclusion'],null,['hue','색조','hue'],['saturation','채도','saturation'],['color','색상','color'],['luminosity','광도','luminosity']];
+const BL_PSD2C={};const BL_C2PSD={};for(const b of BLENDS)if(b){BL_PSD2C[b[2]]=b[0];BL_C2PSD[b[0]]=b[2]}
+BL_PSD2C['pass through']='pass';BL_C2PSD['pass']='pass through';
+const canvasBlend=b=>b==='pass'||b==='dissolve'?'source-over':b==='linear-burn'?'multiply':b;
+
+function newLayer(o){return Object.assign({id:uid++,type:'layer',name:'레이어',canvas:null,x:0,y:0,visible:true,opacity:1,fill:1,blend:'source-over',locked:false,lockT:false,isBg:false,clip:false,mask:null,open:true,children:null,text:null,raw:null},o)}
+function newGroup(name,children=[]){return newLayer({type:'group',name,children,blend:'pass'})}
+function createDoc(name,w,hh,o={}){const d={id:uid++,name,w,h:hh,root:newGroup('root'),active:null,sel:null,selSegs:null,selBounds:null,lastSel:null,zoom:1,panX:0,panY:0,history:[],hIndex:-1,dpi:o.dpi||72,comp:mkCanvas(w,hh),dirty:true,savedIndex:0,channel:'rgb',editMask:false,fileName:o.fileName||null};return d}
+
+/* 트리 */
+function walk(g,fn,depth=0){for(let i=g.children.length-1;i>=0;i--){const l=g.children[i];fn(l,g,i,depth);if(l.type==='group'&&l.children)walk(l,fn,depth+1)}}
+function flat(d=doc){const a=[];walk(d.root,l=>a.push(l));return a}
+function findById(id,d=doc){let r=null;walk(d.root,l=>{if(l.id===id)r=l});return r}
+function parentOf(layer,g=doc.root){for(const c of g.children){if(c===layer)return g;if(c.type==='group'){const p=parentOf(layer,c);if(p)return p}}return null}
+function isRaster(l){return l&&l.type==='layer'}
+function cloneTree(l){const c=Object.assign({},l);if(l.children)c.children=l.children.map(cloneTree);if(l.text)c.text={...l.text};if(l.mask)c.mask={...l.mask};return c}
+
+/* 픽셀 쓰기 전 복사(히스토리 보존) + 문서 영역까지 확장 */
+function touch(l){if(l.canvas)l.canvas=cloneCanvas(l.canvas);if(l.mask)l.mask={...l.mask,c:cloneCanvas(l.mask.c)};if(l.raw)l.raw={...l.raw,text:undefined};return l}
+function ensureFull(l){if(l.type==='text'){if(!l.canvas)rasterizeText(l);l.type='layer'}const c=l.canvas;const x0=Math.min(0,c?l.x:0),y0=Math.min(0,c?l.y:0);const x1=Math.max(doc.w,c?l.x+c.width:0),y1=Math.max(doc.h,c?l.y+c.height:0);if(c&&x0===l.x&&y0===l.y&&x1===l.x+c.width&&y1===l.y+c.height){touch(l);return l}const n=mkCanvas(x1-x0,y1-y0);if(c)cx(n).drawImage(c,l.x-x0,l.y-y0);if(l.mask){const m=mkCanvas(n.width,n.height);const g=cx(m);if(l.mask.def){g.fillStyle='#000';g.fillRect(0,0,m.width,m.height);g.clearRect(l.x-x0,l.y-y0,c?c.width:0,c?c.height:0)}g.drawImage(l.mask.c,l.x-x0,l.y-y0);l.mask={...l.mask,c:m}}l.canvas=n;l.x=x0;l.y=y0;if(l.raw)l.raw={...l.raw,text:undefined};return l}
+
+/* 히스토리 */
+function snap(label){return{label,w:doc.w,h:doc.h,root:cloneTree(doc.root),activeId:doc.active&&doc.active.id,sel:doc.sel,editMask:doc.editMask,thumb:null}}
+function pushHist(label){doc.history.length=doc.hIndex+1;doc.history.push(snap(label));if(doc.history.length>60){doc.history.shift();doc.savedIndex--}doc.hIndex=doc.history.length-1;markDirty();refreshAll()}
+function restoreHist(i){const s=doc.history[i];if(!s)return;cancelTransient();doc.w=s.w;doc.h=s.h;doc.root=cloneTree(s.root);doc.active=findById(s.activeId)||flat()[0]||null;doc.editMask=s.editMask&&doc.active&&!!doc.active.mask;setSel(s.sel,false);if(doc.comp.width!==doc.w||doc.comp.height!==doc.h)doc.comp=mkCanvas(doc.w,doc.h);doc.hIndex=i;markDirty();refreshAll()}
+function undo(){if(doc&&doc.hIndex>0)restoreHist(doc.hIndex-1)}
+function redo(){if(doc&&doc.hIndex<doc.history.length-1)restoreHist(doc.hIndex+1)}
+const isDirtyDoc=d=>d.hIndex!==d.savedIndex;
+
+/* 마스크 알파 캔버스 */
+function maskedCanvas(l){if(!l.mask||l.mask.off||!l.canvas)return l.canvas;const k=l._mk;if(k&&k.c===l.canvas&&k.m===l.mask.c)return k.out;const out=cloneCanvas(l.canvas);const g=cx(out);g.globalCompositeOperation='destination-in';g.drawImage(l.mask.c,0,0);l._mk={c:l.canvas,m:l.mask.c,out};return out}
+
+/* 디졸브 */
+function dissolve(c,op){const out=cloneCanvas(c);const id=getData(out);const d=id.data;for(let i=3;i<d.length;i+=4){const a=d[i]/255*op;d[i]=Math.random()<a?255:0}cx(out).putImageData(id,0,0);return out}
+
+/* 합성 */
+const pool=[];function tmpCanvas(){const c=pool.pop()||mkCanvas(doc.w,doc.h);if(c.width!==doc.w||c.height!==doc.h){c.width=doc.w;c.height=doc.h}else cx(c).clearRect(0,0,c.width,c.height);return c}
+function release(c){if(pool.length<6)pool.push(c)}
+function layerImg(l){if(l.type==='text'&&!l.canvas)rasterizeText(l,true);if(!l.canvas)return null;return maskedCanvas(l)}
+function renderGroup(g,ctx){const ch=g.children;for(let i=0;i<ch.length;i++){const l=ch[i];if(l.clip&&i>0)continue;let j=i+1;const clips=[];while(j<ch.length&&ch[j].clip){clips.push(ch[j]);j++}if(!l.visible||l.type==='adjust')continue;let img,x=0,y=0,own=false;if(l.type==='group'){if(l.blend==='pass'&&l.opacity>=1&&!clips.length&&!(l.mask&&!l.mask.off)){renderGroup(l,ctx);continue}const t=tmpCanvas();renderGroup(l,cx(t));if(l.mask&&!l.mask.off){const g2=cx(t);g2.globalCompositeOperation='destination-in';g2.drawImage(l.mask.c,l.x,l.y);g2.globalCompositeOperation='source-over'}img=t;own=true}else{img=layerImg(l);if(!img)continue;x=l.x;y=l.y}
+  let alpha=l.opacity*(l.type==='group'?1:l.fill);
+  if(clips.length){const t=tmpCanvas();const g2=cx(t);g2.globalAlpha=alpha;g2.drawImage(img,x,y);g2.globalAlpha=1;for(const c of clips){if(!c.visible||c.type==='adjust')continue;let ci,cx2=0,cy2=0,cown=false;if(c.type==='group'){ci=tmpCanvas();renderGroup(c,cx(ci));cown=true}else{ci=layerImg(c);if(!ci)continue;cx2=c.x;cy2=c.y}const t2=tmpCanvas();const g3=cx(t2);g3.drawImage(ci,cx2,cy2);g3.globalCompositeOperation='destination-in';g3.drawImage(t,0,0);g2.globalAlpha=c.opacity*(c.type==='group'?1:c.fill);g2.globalCompositeOperation=canvasBlend(c.blend);g2.drawImage(t2,0,0);g2.globalCompositeOperation='source-over';g2.globalAlpha=1;release(t2);if(cown)release(ci)}if(own)release(img);img=t;own=true;x=y=0;alpha=1}
+  if(l.blend==='dissolve'&&alpha<1){const dimg=dissolve(img,alpha);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.drawImage(dimg,x,y)}else{ctx.globalAlpha=alpha;ctx.globalCompositeOperation=canvasBlend(l.blend);ctx.drawImage(img,x,y)}ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';if(own)release(img)}}
+function composite(d=doc){const g=cx(d.comp);g.clearRect(0,0,d.w,d.h);renderGroup(d.root,g);d.dirty=false;return d.comp}
+function markDirty(){if(doc){doc.dirty=true;requestDraw();schedulePanels()}}
+function flattenCanvas(bg){if(doc.dirty)composite();const c=mkCanvas(doc.w,doc.h);const g=cx(c);if(bg){g.fillStyle=bg;g.fillRect(0,0,c.width,c.height)}g.drawImage(doc.comp,0,0);return c}
+
+/* ===== 선택 영역 (문서 크기 알파 캔버스) ===== */
+function setSel(c,remember=true){if(remember&&doc.sel)doc.lastSel=doc.sel;doc.sel=c||null;doc.selSegs=null;doc.selBounds=null;if(c){const id=getData(c);const d=id.data,w=c.width,hh=c.height;let x0=w,y0=hh,x1=-1,y1=-1;const on=new Uint8Array(w*hh);for(let i=0,p=3;i<w*hh;i++,p+=4)if(d[p]>127){on[i]=1;const x=i%w,y=(i/w)|0;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}if(x1<0){doc.sel=null;requestDraw();return}doc.selBounds={x:x0,y:y0,w:x1-x0+1,h:y1-y0+1};
+  const segs=[];// 가로 경계
+  for(let y=Math.max(0,y0);y<=Math.min(hh,y1+1);y++){let run=-1;for(let x=x0;x<=x1+1;x++){const a=y<hh&&x<=x1?on[y*w+x]:0,b=y>0&&x<=x1?on[(y-1)*w+x]:0;const e=a!==b;if(e&&run<0)run=x;else if(!e&&run>=0){segs.push(run,y,x,y);run=-1}}}
+  for(let x=Math.max(0,x0);x<=Math.min(w,x1+1);x++){let run=-1;for(let y=y0;y<=y1+1;y++){const a=x<w&&y<=y1?on[y*w+x]:0,b=x>0&&y<=y1?on[y*w+x-1]:0;const e=a!==b;if(e&&run<0)run=y;else if(!e&&run>=0){segs.push(x,run,x,y);run=-1}}}
+  doc.selSegs=new Float32Array(segs)}requestDraw();schedulePanels()}
+function selOp(shape,mode,feather){let base=doc.sel;const c=mkCanvas(doc.w,doc.h);const g=cx(c);if(mode==='new'||!base){g.drawImage(shape,0,0)}else{g.drawImage(base,0,0);g.globalCompositeOperation=mode==='add'?'source-over':mode==='sub'?'destination-out':'destination-in';g.drawImage(shape,0,0)}if(feather>0){const f=blurCanvas(c,feather/2,true);return f}return c}
+function shapeCanvas(draw){const c=mkCanvas(doc.w,doc.h);const g=cx(c);g.fillStyle='#000';g.beginPath();draw(g);g.fill();return c}
+function selectAll(){setSel(shapeCanvas(g=>g.rect(0,0,doc.w,doc.h)));pushHist('모두 선택')}
+function deselect(){if(!doc.sel)return;setSel(null);pushHist('선택 해제')}
+function reselect(){if(doc.lastSel){setSel(doc.lastSel);pushHist('다시 선택')}}
+function invertSel(){const c=mkCanvas(doc.w,doc.h);const g=cx(c);g.fillRect(0,0,doc.w,doc.h);if(doc.sel){g.globalCompositeOperation='destination-out';g.drawImage(doc.sel,0,0)}setSel(c);pushHist('반전')}
+function selFromLayerAlpha(l){if(!l||!l.canvas&&l.type!=='text')return;const img=layerImg(l);if(!img)return;const c=mkCanvas(doc.w,doc.h);cx(c).drawImage(img,l.x,l.y);setSel(c);pushHist('투명도 선택 불러오기')}
+/* 선택 영역을 레이어 좌표 기준으로 잘라 쓰기 */
+function selForLayer(l){if(!doc.sel)return null;const c=mkCanvas(l.canvas.width,l.canvas.height);cx(c).drawImage(doc.sel,-l.x,-l.y);return c}
+
+/* ===== 레이어 조작 ===== */
+function activeRaster(why){const l=doc.active;if(!l){toast('레이어를 먼저 선택하세요');return null}if(l.type==='group'){toast('그룹에는 직접 그릴 수 없습니다. 그룹 안의 레이어를 선택하세요');return null}if(l.type==='adjust'){toast('조정 레이어에는 그릴 수 없습니다');return null}if(l.locked){toast('레이어가 잠겨 있습니다');return null}if(!l.visible&&why!=='silent'){toast('숨겨진 레이어에는 그릴 수 없습니다');return null}if(l.type==='text'){if(!l.canvas)rasterizeText(l);l.type='layer';l.raw=null;toast('문자 레이어를 래스터화했습니다')}return l}
+function insertLayer(l,above=doc.active){const p=above?parentOf(above):doc.root;const g=p||doc.root;const idx=above&&p?g.children.indexOf(above)+1:g.children.length;g.children.splice(idx,0,l);doc.active=l;doc.editMask=false;return l}
+function nextName(base){let n=1;const names=new Set(flat().map(l=>l.name));while(names.has(`${base} ${n}`))n++;return`${base} ${n}`}
+function addLayer(name,canvas,x=0,y=0){const l=newLayer({name:name||nextName('레이어'),canvas:canvas||mkCanvas(doc.w,doc.h),x,y});insertLayer(l);return l}
+function cmdNewLayer(){if(!doc)return;addLayer();pushHist('새 레이어')}
+function cmdDupLayer(){const l=doc.active;if(!l)return;const p=parentOf(l);const c=cloneTree(l);const re=x=>{x.id=uid++;if(x.children)x.children.forEach(re)};re(c);c.name=l.name+' 복사';c.isBg=false;c.locked=false;p.children.splice(p.children.indexOf(l)+1,0,c);doc.active=c;pushHist('레이어 복제')}
+function cmdLayerViaCopy(cut){const l=doc.active;if(!isRaster(l)&&l?.type!=='text'){cmdDupLayer();return}if(!doc.sel){cmdDupLayer();return}const L=activeRaster();if(!L)return;const img=cloneCanvas(L.canvas);const g=cx(img);g.globalCompositeOperation='destination-in';g.drawImage(doc.sel,-L.x,-L.y);if(cut){touch(L);const g2=cx(L.canvas);g2.globalCompositeOperation='destination-out';g2.drawImage(doc.sel,-L.x,-L.y)}const n=newLayer({name:nextName('레이어'),canvas:img,x:L.x,y:L.y});insertLayer(n,L);pushHist(cut?'잘라낸 레이어':'복사한 레이어')}
+function cmdDeleteLayer(){const l=doc.active;if(!l)return;const all=flat();if(all.length<=1){toast('마지막 레이어는 삭제할 수 없습니다');return}const p=parentOf(l);const i=p.children.indexOf(l);p.children.splice(i,1);doc.active=p.children[Math.max(0,i-1)]||(p!==doc.root?p:flat()[0]);doc.editMask=false;pushHist('레이어 삭제')}
+function cmdMergeDown(){const l=doc.active;const p=parentOf(l);const i=p.children.indexOf(l);if(i<=0){toast('아래에 병합할 레이어가 없습니다');return}const b=p.children[i-1];if(b.type==='group'||l.type==='adjust'||b.type==='adjust'){toast('그룹·조정 레이어와는 병합할 수 없습니다');return}if(l.type==='group'){mergeGroup(l);return}ensureFull(b);if(b.type==='text'){b.type='layer'}const g=cx(b.canvas);if(l.visible){const img=layerImg(l);if(img){g.globalAlpha=l.opacity*l.fill;g.globalCompositeOperation=canvasBlend(l.blend);g.drawImage(img,l.x-b.x,l.y-b.y)}}p.children.splice(i,1);doc.active=b;b.raw=null;pushHist('아래로 병합')}
+function mergeGroup(gl){const p=parentOf(gl);const t=mkCanvas(doc.w,doc.h);const tmpRoot={children:gl.children};renderGroup(tmpRoot,cx(t));const n=newLayer({name:gl.name,canvas:t,opacity:gl.opacity,blend:gl.blend==='pass'?'source-over':gl.blend,visible:gl.visible});p.children.splice(p.children.indexOf(gl),1,n);doc.active=n;pushHist('그룹 병합')}
+function cmdMergeVisible(){const vis=flat().filter(l=>l.visible);if(vis.length<2)return;const c=cloneCanvas(composite());const n=newLayer({name:'병합됨',canvas:c});const keep=[];const strip=g=>{g.children=g.children.filter(l=>{if(l.type==='group'){strip(l);return l.children.length>0||!l.visible}return!l.visible})};strip(doc.root);doc.root.children.push(n);doc.active=n;pushHist('보이는 레이어 병합')}
+function cmdFlatten(){const c=flattenCanvas('#ffffff');const n=newLayer({name:'배경',canvas:c,isBg:true,lockT:false});doc.root.children=[n];doc.active=n;pushHist('이미지 병합')}
+function cmdGroup(){const l=doc.active;if(!l)return;const p=parentOf(l);const g=newGroup(nextName('그룹'),[l]);p.children.splice(p.children.indexOf(l),1,g);doc.active=g;pushHist('레이어 그룹화')}
+function cmdNewGroup(){const g=newGroup(nextName('그룹'));insertLayer(g);pushHist('새 그룹')}
+function cmdUngroup(){const g=doc.active;if(!g||g.type!=='group')return;const p=parentOf(g);p.children.splice(p.children.indexOf(g),1,...g.children);doc.active=g.children[g.children.length-1]||flat()[0];pushHist('그룹 해제')}
+function cmdArrange(dir){const l=doc.active;if(!l)return;const p=parentOf(l);const a=p.children;const i=a.indexOf(l);let j=dir==='front'?a.length-1:dir==='back'?0:dir==='fwd'?i+1:i-1;j=clamp(j,0,a.length-1);if(j===i)return;a.splice(i,1);a.splice(j,0,l);pushHist('레이어 정렬')}
+function cmdClip(){const l=doc.active;if(!l)return;const p=parentOf(l);if(p.children.indexOf(l)===0){toast('아래에 기준 레이어가 없습니다');return}l.clip=!l.clip;pushHist(l.clip?'클리핑 마스크 만들기':'클리핑 마스크 해제')}
+function cmdRasterize(){const l=doc.active;if(!l||l.type!=='text')return;if(!l.canvas)rasterizeText(l);l.type='layer';l.raw=null;pushHist('문자 래스터화')}
+function cmdBgToLayer(){const l=doc.active;if(!l||!l.isBg)return;l.isBg=false;l.locked=false;l.name=nextName('레이어');pushHist('배경에서 레이어로')}
+function cmdAddMask(fromSel){const l=doc.active;if(!l||l.mask)return;if(l.isBg)cmdBgToLayerSilent(l);const w=l.type==='group'?doc.w:(l.canvas?l.canvas.width:doc.w),hh=l.type==='group'?doc.h:(l.canvas?l.canvas.height:doc.h);const ox=l.type==='group'?0:l.x,oy=l.type==='group'?0:l.y;const m=mkCanvas(w,hh);const g=cx(m);if(fromSel&&doc.sel){g.drawImage(doc.sel,-ox,-oy)}else{g.fillStyle='#000';g.fillRect(0,0,w,hh)}l.mask={c:m,def:fromSel&&doc.sel?0:255};if(l.type==='group'){l.x=0;l.y=0}doc.editMask=true;pushHist('레이어 마스크')}
+function cmdBgToLayerSilent(l){l.isBg=false;l.locked=false;if(l.name==='배경')l.name='레이어 0'}
+function cmdDeleteMask(apply){const l=doc.active;if(!l||!l.mask)return;if(apply&&l.type!=='group'){touch(l);const g=cx(l.canvas);g.globalCompositeOperation='destination-in';g.drawImage(l.mask.c,0,0)}l.mask=null;l._mk=null;doc.editMask=false;pushHist(apply?'레이어 마스크 적용':'레이어 마스크 삭제')}
+
+/* ===== 문자 레이어 ===== */
+
+/* ===== 문서 열기 / 만들기 ===== */
+function addDoc(d){docs.push(d);switchDoc(d);fitView();pushHistInit(d)}
+function pushHistInit(d,label='열기'){d.history=[];d.hIndex=-1;const prev=doc;doc=d;pushHist(label);d.savedIndex=d.hIndex;doc=prev||d}
+function switchDoc(d){cancelTransient();doc=d;$('#empty').hidden=!!d;markDirty();refreshAll();renderTabs()}
+function closeDoc(d,force){if(!force&&isDirtyDoc(d)){confirmDlg(`"${d.name}" 의 변경 내용을 저장하지 않고 닫을까요?`,'닫기',()=>closeDoc(d,true));return}const i=docs.indexOf(d);docs.splice(i,1);if(doc===d){doc=docs[Math.min(i,docs.length-1)]||null}switchDoc(doc);if(!doc){requestDraw()}}
+function newDocument(name,w,hh,bg,dpi){const d=createDoc(name,w,hh,{dpi});const prev=doc;doc=d;let l;if(bg==='transparent'){l=newLayer({name:'레이어 1',canvas:mkCanvas(w,hh)})}else{const c=mkCanvas(w,hh);const g=cx(c);g.fillStyle=bg;g.fillRect(0,0,w,hh);l=newLayer({name:'배경',canvas:c,isBg:true})}d.root.children.push(l);d.active=l;doc=prev;addDoc(d);return d}
+function docFromCanvas(name,c,dpi){const d=createDoc(name,c.width,c.height,{dpi,fileName:name});d.root.children.push(newLayer({name:'배경',canvas:c,isBg:true}));d.active=d.root.children[0];addDoc(d);return d}
+
+function readFileBuf(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsArrayBuffer(f)})}
+function loadImg(blob){return new Promise((res,rej)=>{const u=URL.createObjectURL(blob);const im=new Image();im.onload=()=>{URL.revokeObjectURL(u);res(im)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('이미지를 읽을 수 없습니다'))};im.src=u})}
+async function fileToCanvas(f){let ext=(await sniff(f))||f.name.split('.').pop().toLowerCase();if(ext==='heic'||ext==='heif')throw new Error('아이폰 HEIC 사진은 브라우저에서 읽을 수 없습니다. JPG로 바꿔서 여세요');if(ext==='pdf')throw new Error('PDF는 열 수 없습니다. 이미지로 내보낸 뒤 여세요');if(ext==='tif'||ext==='tiff'){const buf=await readFileBuf(f);if(typeof UTIF==='undefined')throw new Error('TIFF 해석기를 불러오지 못했습니다');const ifds=UTIF.decode(buf);const ifd=ifds[0];UTIF.decodeImage(buf,ifd);const rgba=UTIF.toRGBA8(ifd);const c=mkCanvas(ifd.width,ifd.height);const id=new ImageData(new Uint8ClampedArray(rgba.buffer,rgba.byteOffset,ifd.width*ifd.height*4),ifd.width,ifd.height);cx(c).putImageData(id,0,0);let dpi=72;const xr=ifd.t282;if(xr&&xr[0])dpi=Math.round(Array.isArray(xr[0])?xr[0][0]/xr[0][1]:xr[0]);return{canvas:c,dpi,pages:ifds.length}}if(ext==='psd'||ext==='psb'){const r=await psdToCanvas(f);return r}const c=await decodeImage(f).catch(()=>{throw new Error(`이미지를 읽을 수 없습니다 (${ext||'알 수 없는 형식'})`)});return{canvas:c,dpi:72}}
+async function psdToCanvas(f){const buf=await readFileBuf(f);const psd=agPsd.readPsd(buf,{skipLayerImageData:true,skipThumbnail:true});return{canvas:psd.canvas,dpi:72}}
+
+function psdLayer(src){const l=newLayer({name:src.name||'레이어',visible:!src.hidden,opacity:src.opacity==null?1:src.opacity,blend:BL_PSD2C[src.blendMode]||'source-over',clip:!!src.clipping,x:src.left||0,y:src.top||0});
+  if(src.children){l.type='group';l.children=src.children.map(psdLayer);l.open=!!src.opened;l.x=0;l.y=0;if(!src.blendMode)l.blend='pass'}else{l.canvas=src.canvas||null;if(src.fillOpacity!=null)l.fill=src.fillOpacity;if(src.adjustment&&!src.canvas){l.type='adjust';}if(src.text){l.raw={text:src.text};l.text=textFromPsd(src);l.type='text';l.textFromPsd=true}}
+  l.raw=Object.assign({},l.raw,{effects:src.effects,adjustment:src.adjustment,vectorFill:src.vectorFill,vectorMask:src.vectorMask,vectorStroke:src.vectorStroke,vectorOrigination:src.vectorOrigination,placedLayer:src.placedLayer,protected:src.protected});
+  if(src.protected&&src.protected.composite)l.locked=true;if(src.protected&&src.protected.transparency)l.lockT=true;
+  if(src.mask&&src.mask.canvas){const m=src.mask;const ow=l.type==='group'?doc.w:(l.canvas?l.canvas.width:0),oh=l.type==='group'?doc.h:(l.canvas?l.canvas.height:0);const ox=l.type==='group'?0:l.x,oy=l.type==='group'?0:l.y;if(ow&&oh){const mc=mkCanvas(ow,oh);const g=cx(mc);const def=(m.defaultColor||0)>127?255:0;if(def){g.fillStyle='#000';g.fillRect(0,0,ow,oh);g.clearRect((m.left||0)-ox,(m.top||0)-oy,m.canvas.width,m.canvas.height)}const gray=getData(m.canvas);const dd=gray.data;for(let i=0;i<dd.length;i+=4){dd[i+3]=dd[i];dd[i]=dd[i+1]=dd[i+2]=0}const t=mkCanvas(m.canvas.width,m.canvas.height);cx(t).putImageData(gray,0,0);g.drawImage(t,(m.left||0)-ox,(m.top||0)-oy);l.mask={c:mc,def,off:!!m.disabled}}}
+  return l}
+async function openPsd(f){const buf=await readFileBuf(f);const psd=agPsd.readPsd(buf,{skipThumbnail:true});const name=f.name;let dpi=72;try{const ri=psd.imageResources&&psd.imageResources.resolutionInfo;if(ri&&ri.horizontalResolution)dpi=Math.round(ri.horizontalResolution)}catch(e){}const d=createDoc(name,psd.width,psd.height,{dpi,fileName:name});const prev=doc;doc=d;let kids=(psd.children||[]).map(psdLayer);let warn=[];
+  if(!kids.length&&psd.canvas){kids=[newLayer({name:'배경',canvas:psd.canvas,isBg:true})]}
+  d.root.children=kids;const fl=flat(d);if(fl.some(l=>l.raw&&l.raw.effects))warn.push('레이어 스타일(그림자 등)');if(fl.some(l=>l.type==='adjust'))warn.push('조정 레이어');d.active=fl[0]||null;d.psdComposite=psd.canvas||null;doc=prev;addDoc(d);if(warn.length)toast(`${warn.join(', ')}은 화면에 표시하지 않고 보존만 합니다. PSD로 저장하면 그대로 남습니다.`,5200);return d}
+async function openFiles(files){for(const f of files){busy(true,`${f.name} 여는 중…`);await nextFrame();try{const kind=await sniff(f);const ext=kind||f.name.split('.').pop().toLowerCase();if(ext==='psd'||ext==='psb'){if(typeof agPsd==='undefined')throw new Error('PSD 해석기를 불러오지 못했습니다');await openPsd(f)}else{const r=await fileToCanvas(f);docFromCanvas(f.name,r.canvas,r.dpi);if(r.pages>1)toast(`여러 페이지 TIF입니다. 첫 페이지만 열었습니다 (${r.pages}쪽)`)}}catch(e){console.error(e);toast(`${f.name}: ${e.message||'열 수 없는 파일입니다'}`,4000)}busy(false)}}
+async function placeFile(f){if(!doc){openFiles([f]);return}busy(true,'가져오는 중…');await nextFrame();try{const r=await fileToCanvas(f);let c=r.canvas;const s=Math.min(1,doc.w/c.width,doc.h/c.height);const l=addLayer(f.name.replace(/\.[^.]+$/,''),c,Math.round((doc.w-c.width)/2),Math.round((doc.h-c.height)/2));pushHist('가져오기');if(s<1){startTransform(true,s)}}catch(e){toast(e.message)}busy(false)}
+
+/* ===== 저장 ===== */
+function exportLayer(l){const o={name:l.name,hidden:!l.visible,opacity:l.opacity,blendMode:BL_C2PSD[l.blend]||'normal',clipping:!!l.clip};if(l.type==='group'){o.children=l.children.map(exportLayer);o.opened=!!l.open;if(l.blend==='pass')o.blendMode='pass through'}else{if(l.type==='text'&&!l.canvas)rasterizeText(l,true);if(l.canvas){o.canvas=l.canvas;o.left=l.x;o.top=l.y}if(l.fill!==1)o.fillOpacity=l.fill;if(l.raw){for(const k of['effects','adjustment','vectorFill','vectorMask','vectorStroke','vectorOrigination','placedLayer'])if(l.raw[k])o[k]=l.raw[k];if(l.raw.text&&l.textFromPsd)o.text=l.raw.text}}if(l.type==='text'&&l.text&&!l.textFromPsd){o.text=psdTextStyle(l.text)}if(l.locked||l.lockT)o.protected={composite:!!l.locked,transparency:!!l.lockT,position:!!l.locked};if(l.mask){const m=l.mask.c;const t=mkCanvas(m.width,m.height);const id=getData(m);const dd=id.data;for(let i=0;i<dd.length;i+=4){const a=dd[i+3];dd[i]=dd[i+1]=dd[i+2]=a;dd[i+3]=255}cx(t).putImageData(id,0,0);o.mask={canvas:t,left:l.type==='group'?0:l.x,top:l.type==='group'?0:l.y,defaultColor:l.mask.def,disabled:!!l.mask.off}}return o}
+function buildPsd(){const comp=flattenCanvas();const psd={width:doc.w,height:doc.h,canvas:comp,children:doc.root.children.map(exportLayer),imageResources:{resolutionInfo:{horizontalResolution:doc.dpi,horizontalResolutionUnit:'PPI',widthUnit:'Inches',verticalResolution:doc.dpi,verticalResolutionUnit:'PPI',heightUnit:'Inches'}}};let buf;try{buf=agPsd.writePsdUint8Array(psd,{generateThumbnail:true,trimImageData:false})}catch(e){console.warn('text keep failed',e);const strip=a=>a.forEach(o=>{delete o.text;if(o.children)strip(o.children)});strip(psd.children);buf=agPsd.writePsdUint8Array(psd,{generateThumbnail:true})}return new Blob([buf],{type:'application/octet-stream'})}
+const baseName=()=>(doc.fileName||doc.name).replace(/\.[^.]+$/,'');
+async function savePsd(){if(!doc)return;if(typeof agPsd==='undefined'){toast('PSD 저장기를 불러오지 못했습니다');return}busy(true,'PSD 만드는 중…');await nextFrame();try{const b=buildPsd();busy(false);const ok=await saveBlob(baseName()+'.psd',b);if(ok){doc.savedIndex=doc.hIndex;renderTabs()}}catch(e){busy(false);console.error(e);toast('PSD 저장 실패: '+e.message,4000)}}
+async function saveImage(fmt,q){if(!doc)return;const type=fmt==='jpg'?'image/jpeg':fmt==='webp'?'image/webp':'image/png';const c=flattenCanvas(fmt==='jpg'?'#ffffff':null);const b=await canvasBlob(c,type,q);await saveBlob(`${baseName()}.${fmt}`,b)}
+async function exportLayersZip(){busy(true,'레이어 내보내는 중…');await nextFrame();const files=[];const enc=async(l,prefix)=>{if(l.type==='group'){for(const c of l.children)await enc(c,prefix+l.name+'_');return}const img=layerImg(l);if(!img)return;const b=await canvasBlob(img);files.push({name:`${String(files.length+1).padStart(2,'0')}_${(prefix+l.name).replace(/[\\/:*?"<>|]/g,'_')}.png`,data:new Uint8Array(await b.arrayBuffer())})};for(const l of doc.root.children)await enc(l,'');busy(false);if(!files.length){toast('내보낼 레이어가 없습니다');return}await saveBlob(baseName()+'_레이어.zip',makeZip(files))}

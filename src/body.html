@@ -1,0 +1,69 @@
+<div id="app">
+  <div id="menubar">
+    <div id="logo" title="IUX Photo">IP</div>
+    <div id="menus"></div>
+    <div id="mright"><span class="tag" id="envTag"></span><button id="panelToggle" class="ibtn" title="패널 열기/닫기"></button></div>
+  </div>
+  <div id="optbar"></div>
+  <div id="main">
+    <div id="toolbar"></div>
+    <div id="center">
+      <div id="tabs"></div>
+      <div id="work">
+        <canvas id="view"></canvas>
+        <textarea id="textEdit" hidden spellcheck="false"></textarea>
+        <div id="empty" hidden>
+          <div class="box">
+            <h2>열린 문서가 없습니다</h2>
+            <div class="muted">PSD, JPG, PNG, WEBP, TIF 파일을 이 영역에 끌어다 놓아도 열립니다</div>
+            <div class="row"><button class="btn pri" data-cmd="new">새로 만들기</button><button class="btn" data-cmd="open">열기</button></div>
+          </div>
+        </div>
+        <div id="dropHint" hidden>여기에 놓으면 새 탭으로 엽니다</div>
+        <div id="busy" hidden><div class="b"><div class="spin"></div><span id="busyMsg">처리 중…</span></div></div>
+      </div>
+      <div id="status">
+        <input id="zoomInp" class="inp" value="100%" aria-label="확대 비율">
+        <span id="stDoc">문서: -</span>
+        <span id="stPos"></span>
+        <span id="stMsg" class="muted"></span>
+      </div>
+    </div>
+    <div id="dock"></div>
+    <div id="panels">
+      <div class="pgroup" id="pg1">
+        <div class="ptabs"><div class="ptab on" data-tab="nav">내비게이터</div><div class="ptab" data-tab="hist">히스토그램</div><div class="ptab" data-tab="info">정보</div></div>
+        <div class="pbody" data-body="nav"><div id="navWrap"><canvas id="navCv"></canvas><div id="navBar"><button class="ibtn" id="navOut" title="축소"></button><input type="range" id="navZoom" min="0" max="100" value="50" aria-label="확대 비율"><button class="ibtn" id="navIn" title="확대"></button></div></div></div>
+        <div class="pbody" data-body="hist" hidden><div style="padding:8px"><canvas id="histCv"></canvas><div class="prow"><label>채널</label><select id="histCh" class="inp"><option value="rgb">색상</option><option value="lum">광도</option><option value="r">빨강</option><option value="g">녹색</option><option value="b">파랑</option></select></div></div></div>
+        <div class="pbody" data-body="info" hidden><div id="infoBox"></div></div>
+      </div>
+      <div class="pgroup" id="pg2">
+        <div class="ptabs"><div class="ptab on" data-tab="props">속성</div><div class="ptab" data-tab="adj">조정</div><div class="ptab" data-tab="history">히스토리</div><div class="ptab" data-tab="char">문자</div><div class="ptab" data-tab="para">단락</div><div class="ptab" data-tab="brush">브러시</div></div>
+        <div class="pbody" data-body="props" id="propsBody"></div>
+        <div class="pbody" data-body="adj" id="adjBody" hidden></div>
+        <div class="pbody" data-body="history" id="histList" hidden></div>
+        <div class="pbody" data-body="char" id="charBody" hidden></div>
+        <div class="pbody" data-body="para" id="paraBody" hidden></div>
+        <div class="pbody" data-body="brush" id="brushBody" hidden></div>
+      </div>
+      <div class="pgroup" id="pg3" style="border-bottom:0">
+        <div class="ptabs"><div class="ptab on" data-tab="layers">레이어</div><div class="ptab" data-tab="channels">채널</div></div>
+        <div class="pbody" data-body="layers" style="display:flex;flex-direction:column;overflow:hidden">
+          <div id="layerHead">
+            <div class="r"><select id="lBlend" class="inp" aria-label="혼합 모드"></select><span class="olab scrub" data-scrub="lOpacity">불투명도:</span><input id="lOpacity" class="inp s" value="100%"></div>
+            <div class="r"><span class="olab">잠그기:</span><button class="ibtn" id="lLockT" title="투명 픽셀 잠그기"></button><button class="ibtn" id="lLockA" title="모두 잠그기"></button><span style="flex:1"></span><span class="olab scrub" data-scrub="lFill">칠:</span><input id="lFill" class="inp s" value="100%"></div>
+          </div>
+          <div id="layerList"></div>
+          <div id="layerFoot"></div>
+        </div>
+        <div class="pbody" data-body="channels" id="chList" hidden></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="modal" hidden></div>
+<input type="file" id="fileIn" accept=".psd,.psb,.tif,.tiff,image/*" multiple hidden>
+<input type="file" id="placeIn" accept=".psd,.tif,.tiff,image/*" hidden>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<filter id="fSharp"><feConvolveMatrix order="3" kernelMatrix="0 -0.6 0 -0.6 3.4 -0.6 0 -0.6 0" preserveAlpha="true"/></filter>
+</defs></svg>

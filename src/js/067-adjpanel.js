@@ -1,0 +1,50 @@
+/* ===== 추가 조정: 포토 필터 · 채널 혼합 · 색상 검색 · 선택 색상 ===== */
+const PF_LIST=[['#ec8a00','따뜻한 효과 필터 (85)'],['#fa9600','따뜻한 효과 필터 (LBA)'],['#ebb113','따뜻한 효과 필터 (81)'],['#006dff','냉각 필터 (80)'],['#005dff','냉각 필터 (LBB)'],['#00b5ff','냉각 필터 (82)'],['#ea1a1a','빨강'],['#f28c28','주황'],['#f9e31c','노랑'],['#19c919','녹색'],['#1de0e0','녹청'],['#1d35ea','파랑'],['#5b21ea','보라'],['#e31ce0','마젠타'],['#ac7a33','세피아'],['#ff7d9c','심해']];
+ADJ.photoFilter=()=>psAdjust({title:'포토 필터',width:480,fn:(id,v)=>{const d=id.data;const[fr,fgc,fb]=hex2rgb(v.c);const k=v.d/100;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];const L0=lum(r,g,b);let nr=r+(r*fr/255-r)*k,ng=g+(g*fgc/255-g)*k,nb=b+(b*fb/255-b)*k;nr=r*(1-k)+(r*fr/255*1.0+(fr-r)*.15)*k;ng=g*(1-k)+(g*fgc/255+(fgc-g)*.15)*k;nb=b*(1-k)+(b*fb/255+(fb-b)*.15)*k;if(v.keep){const dl=L0-lum(nr,ng,nb);nr+=dl;ng+=dl;nb+=dl}d[i]=nr;d[i+1]=ng;d[i+2]=nb}},
+  build(body,api){let c=PF_LIST[0][0],keep=true;const s=selBox(PF_LIST.map(p=>[p[0],p[1]]),c,v=>{c=v;sw.style.background=v;api.on()},'width:100%');const sw=h('div',{style:`width:28px;height:22px;border:1px solid #222;background:${c};cursor:pointer`,onclick:()=>{const ci=h('input',{type:'color',value:c});ci.oninput=()=>{c=ci.value;sw.style.background=c;api.on()};ci.click()}});const den=slider('밀도:',1,100,25,1,api.on);body.append(gbox('사용',h('div',{class:'prow'},h('label',null,'필터'),s),h('div',{class:'prow'},h('label',null,'색상'),sw)),den.row,cbox('광도 유지',true,v=>{keep=v;api.on()}));return{vals:()=>({c,d:den.v,keep})}}});
+ADJ.channelMixer=()=>psAdjust({title:'채널 혼합',width:480,fn:(id,v)=>{const d=id.data;const M=v.m;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];const o=k=>(r*M[k][0]+g*M[k][1]+b*M[k][2])/100+M[k][3]*2.55;if(v.mono){const y=o('r');d[i]=d[i+1]=d[i+2]=y}else{d[i]=o('r');d[i+1]=o('g');d[i+2]=o('b')}}},
+  build(body,api){const m={r:[100,0,0,0],g:[0,100,0,0],b:[0,0,100,0]};let out='r',mono=false;const S=[['빨강:',0],['녹색:',1],['파랑:',2]].map(([l,i])=>{const s=slider(l,-200,200,m[out][i],1,()=>{m[out][i]=s.v;tot();api.on()});return s});const C=slider('상수:',-200,200,0,1,()=>{m[out][3]=C.v;api.on()});const total=h('div',{class:'muted',style:'text-align:right'});const tot=()=>{const t=m[out][0]+m[out][1]+m[out][2];total.textContent=`합계: ${t>0?'+':''}${t}%`;total.style.color=t>200?'#ffb74d':''};const sync=()=>{S.forEach((s,i)=>s.v=m[out][i]);C.v=m[out][3];tot()};const os=selBox([['r','빨강'],['g','녹색'],['b','파랑']],'r',v=>{out=v;sync()},'width:140px');body.append(h('div',{class:'prow'},h('label',null,'출력 채널'),os),gbox('소스 채널',...S.map(s=>s.row),total),C.row,cbox('단색',false,v=>{mono=v;if(v){out='r';os.value='r';os.disabled=true;m.r=[40,40,20,0];sync()}else os.disabled=false;api.on()}));tot();return{vals:()=>({m:JSON.parse(JSON.stringify(m)),mono})}}});
+const LOOKS={
+  '기본':null,
+  '따뜻하게':(r,g,b)=>[r*1.08+8,g*1.02+3,b*.9],
+  '차갑게':(r,g,b)=>[r*.92,g*1.0+2,b*1.1+8],
+  '흑백':(r,g,b)=>{const y=lum(r,g,b);return[y,y,y]},
+  '세피아':(r,g,b)=>{const y=lum(r,g,b);return[y*1.07+20,y*.95+8,y*.75]},
+  '고대비':(r,g,b)=>[r,g,b].map(v=>{const t=v/255;return(t<.5?2*t*t:1-2*(1-t)*(1-t))*255}),
+  '빈티지':(r,g,b)=>[r*.85+35,g*.8+30,b*.65+40],
+  '페이드':(r,g,b)=>[r*.82+30,g*.82+30,b*.82+34],
+  '시네마':(r,g,b)=>{const y=lum(r,g,b)/255;return[r*.9+(1-y)*0,g*.98+(1-y)*10,b*.9+(1-y)*30+ y*-10]},
+  '선명하게':(r,g,b)=>{const y=lum(r,g,b);return[r,g,b].map(v=>y+(v-y)*1.35)},
+  '필름':(r,g,b)=>[r,g,b].map((v,i)=>{const t=v/255;const s=t*t*(3-2*t);return(t*.5+s*.5)*235+(i===2?14:10)}),
+  '야간':(r,g,b)=>{const y=lum(r,g,b);return[y*.35,y*.55,y*.9+10]}
+};
+function lookFn(name,amt=1){const f=LOOKS[name];return id=>{if(!f)return;const d=id.data;for(let i=0;i<d.length;i+=4){const o=f(d[i],d[i+1],d[i+2]);d[i]+=(o[0]-d[i])*amt;d[i+1]+=(o[1]-d[i+1])*amt;d[i+2]+=(o[2]-d[i+2])*amt}}}
+ADJ.colorLookup=()=>psAdjust({title:'색상 검색',width:480,thumb:true,fn:(id,v)=>lookFn(v.n,v.a/100)(id),build(body,api){let n='시네마';const s=selBox(Object.keys(LOOKS).filter(k=>k!=='기본').map(k=>[k,k]),n,v=>{n=v;api.on()},'width:100%');const a=slider('불투명도(%):',0,100,100,1,api.on);body.append(h('div',{class:'prow'},h('label',null,'3DLUT 파일'),s),a.row);return{vals:()=>({n,a:a.v})}}});
+const SC_RANGES=[['r','빨강 계열'],['y','노랑 계열'],['g','녹색 계열'],['c','녹청 계열'],['b','파랑 계열'],['m','마젠타 계열'],['w','흰색 계열'],['n','중간색'],['k','검정 계열']];
+ADJ.selectiveColor=()=>psAdjust({title:'선택 색상',width:500,fn:(id,v)=>{const d=id.data;for(let i=0;i<d.length;i+=4){let r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),md=r+g+b-mx-mn;const W={};W.r=r===mx?mx-md:0;W.g=g===mx?mx-md:0;W.b=b===mx?mx-md:0;W.c=r===mn?md-mn:0;W.m=g===mn?md-mn:0;W.y=b===mn?md-mn:0;W.w=mn>.5?(mn-.5)*2:0;W.k=mx<.5?(.5-mx)*2:0;W.n=1-Math.abs(mx-.5)-Math.abs(mn-.5);const ch=[r,g,b];for(const k in v.s){const a=v.s[k];if(!(a[0]||a[1]||a[2]||a[3]))continue;const w=Math.max(0,W[k]);if(!w)continue;for(let c=0;c<3;c++){const cmy=1-ch[c];let adj=a[c]/100+a[3]/100;if(v.rel)adj*=cmy;ch[c]=clamp(ch[c]-adj*w,0,1)}}d[i]=ch[0]*255;d[i+1]=ch[1]*255;d[i+2]=ch[2]*255}},
+  build(body,api){const S={};SC_RANGES.forEach(([k])=>S[k]=[0,0,0,0]);let cur='r',rel=true;const sl=[['녹청:',0],['마젠타:',1],['노랑:',2],['검정:',3]].map(([l,i])=>{const s=slider(l,-100,100,0,1,()=>{S[cur][i]=s.v;api.on()});return s});const sync=()=>sl.forEach((s,i)=>s.v=S[cur][i]);body.append(h('div',{class:'prow'},h('label',null,'색상'),selBox(SC_RANGES,cur,v=>{cur=v;sync()},'width:160px')),...sl.map(s=>s.row),gbox('방법',radio('scM','rel','상대치',true,()=>{rel=true;api.on()}),radio('scM','abs','절대치',false,()=>{rel=false;api.on()})));return{vals:()=>({s:JSON.parse(JSON.stringify(S)),rel})}}});
+
+/* ===== 조정 패널 (아이콘) ===== */
+const AI=(p)=>`<svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">${p}</svg>`;
+const ADJ_ICONS=[
+ ['bc','명도/대비',AI('<circle cx="14" cy="14" r="5"/><path d="M14 9a5 5 0 010 10z" fill="currentColor"/><path d="M14 3v3M14 22v3M3 14h3M22 14h3M6.2 6.2l2.1 2.1M19.7 19.7l2.1 2.1M6.2 21.8l2.1-2.1M19.7 8.3l2.1-2.1"/>')],
+ ['levels','레벨',AI('<path d="M3 24h22" /><path d="M5 24v-5M8 24v-9M11 24v-12M14 24v-7M17 24v-14M20 24v-10M23 24v-4" stroke-width="2"/>')],
+ ['curves','곡선',AI('<rect x="4" y="4" width="20" height="20"/><path d="M4 14h20M14 4v20" opacity=".45"/><path d="M4 24c6-1 6-14 20-20" stroke-width="1.8"/>')],
+ ['exposure','노출',AI('<rect x="4" y="4" width="20" height="20"/><path d="M4 24L24 4"/><path d="M7 9h5M9.5 6.5v5M16 19h5"/>')],
+ ['vibrance','활기',AI('<path d="M5 6h18L14 23z" fill="currentColor"/>')],
+ ['hueSat','색조/채도',AI('<rect x="4" y="4" width="20" height="20"/><path d="M4 11h20M4 17h20M11 4v20M17 4v20" opacity=".6"/><rect x="4" y="4" width="7" height="7" fill="currentColor"/>')],
+ ['colorBal','색상 균형',AI('<path d="M14 5v18M8 23h12M5 9h18"/><path d="M5 9l-3 7h6zM23 9l-3 7h6z"/>')],
+ ['bw','흑백',AI('<rect x="4" y="4" width="20" height="20"/><path d="M14 4h10v20H14z" fill="currentColor"/>')],
+ ['photoFilter','포토 필터',AI('<rect x="3" y="9" width="18" height="13" rx="2"/><path d="M8 9l2-3h4l2 3"/><circle cx="12" cy="15.5" r="3.5"/><circle cx="22" cy="20" r="4" fill="currentColor"/>')],
+ ['channelMixer','채널 혼합',AI('<circle cx="11" cy="11" r="6"/><circle cx="17" cy="11" r="6"/><circle cx="14" cy="17" r="6"/>')],
+ ['colorLookup','색상 검색',AI('<rect x="4" y="4" width="20" height="20"/><path d="M4 10.7h20M4 17.3h20M10.7 4v20M17.3 4v20"/>')],
+ ['invert','반전',AI('<rect x="4" y="4" width="20" height="20"/><path d="M24 4L4 24h20z" fill="currentColor"/>')],
+ ['posterize','포스터화',AI('<rect x="4" y="6" width="20" height="16"/><path d="M4 22h5v-4h5v-4h5v-4h5" fill="currentColor" stroke="none"/>')],
+ ['threshold','한계값',AI('<rect x="4" y="6" width="20" height="16"/><path d="M4 22l6-8 4 4 5-7 5 3v8z" fill="currentColor"/>')],
+ ['selectiveColor','선택 색상',AI('<rect x="4" y="6" width="20" height="16"/><path d="M4 6l20 16M24 6L4 22"/>')],
+ ['gradMap','그레이디언트 맵',AI('<defs><linearGradient id="agm" x1="0" x2="1"><stop offset="0" stop-color="currentColor"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><rect x="4" y="7" width="20" height="14" fill="url(#agm)"/>')]
+];
+let adjOpen={single:true,preset:true};
+function refreshAdj(){const el=$('#adjBody');if(!el||el.hidden)return;el.innerHTML='';const head=(k,t)=>h('div',{class:'sech',style:'padding:8px 10px 4px;cursor:default;display:flex;align-items:center;gap:6px',onclick:()=>{adjOpen[k]=!adjOpen[k];refreshAdj()}},h('span',{html:icon(adjOpen[k]?'chevD':'chevR','i s')}),t);
+  el.append(head('single','단일 조정'));if(adjOpen.single){el.append(h('div',{style:'display:grid;grid-template-columns:repeat(4,1fr);gap:4px 2px;padding:4px 8px 10px'},ADJ_ICONS.map(([k,n,svg])=>h('button',{title:n,style:'display:grid;justify-items:center;gap:4px;padding:6px 2px;background:none;border:0;border-radius:3px;color:var(--text);font-size:11px;line-height:1.2;cursor:default',onmouseenter:e=>e.currentTarget.style.background='#5f5f5f',onmouseleave:e=>e.currentTarget.style.background='none',onclick:()=>{if(!doc)return;ADJ[k]()},html:svg+`<span>${n}</span>`}))))}
+  el.append(head('preset','사전 설정'));if(adjOpen.preset){const grid=h('div',{style:'display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px 10px 12px'});el.append(grid,h('div',{class:'muted',style:'padding:0 10px 12px;font-size:11px'},'선택한 레이어(또는 선택 영역)에 바로 적용됩니다.'));if(!doc)return;if(doc.dirty)composite();const src=doc.comp;const s=Math.min(1,56/Math.max(src.width,src.height)*2);const base=mkCanvas(Math.max(1,src.width*s),Math.max(1,src.height*s));cx(base).drawImage(src,0,0,base.width,base.height);for(const name of Object.keys(LOOKS)){const c=cloneCanvas(base);const id=getData(c);lookFn(name)(id);cx(c).putImageData(id,0,0);c.style.cssText='width:100%;aspect-ratio:1;object-fit:cover;display:block;border:1px solid #2a2a2a;background:#2b2b2b';grid.append(h('button',{title:name,style:'padding:0;border:0;background:none;display:grid;gap:3px;color:var(--text-2);font-size:10.5px;cursor:default',onclick:()=>{if(name==='기본')return;instantAdjust(`사전 설정: ${name}`,lookFn(name))}},c,name))}}}
