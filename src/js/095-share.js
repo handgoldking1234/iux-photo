@@ -47,7 +47,7 @@ function installApp(){
   const li=t=>h('li',{style:'margin:4px 0'},t);
   const box=h('div',{style:'display:grid;gap:12px;font-size:13px;line-height:1.55'},
     IS_STANDALONE?h('div',{style:'color:#7fd18b'},'✓ 이미 앱으로 설치되어 실행 중입니다.'):null,
-    ONLINE?h('div',{class:'muted'},'지금은 Claude 미리보기 화면이라 설치가 안 됩니다. iux-photo.vercel.app 을 휴대폰 브라우저로 열어 주세요.'):null,
+    ONLINE?h('div',{class:'muted'},'지금은 Claude 미리보기 화면이라 설치가 안 됩니다. photo.iux.kr 을 휴대폰 브라우저로 열어 주세요.'):null,
     h('b',null,iOS?'아이폰 · 아이패드 (사파리)':'안드로이드 (크롬 · 삼성 인터넷)'),
     h('ol',{style:'margin:0;padding-left:20px'},...(iOS?[li('사파리 아래쪽의 공유 버튼(□↑)을 누릅니다'),li('"홈 화면에 추가"를 누릅니다'),li('홈 화면의 IUX Photo 아이콘으로 실행합니다')]:[li('브라우저 오른쪽 위 ⋮ 메뉴를 누릅니다'),li('"앱 설치" 또는 "홈 화면에 추가"를 누릅니다'),li('홈 화면의 IUX Photo 아이콘으로 실행합니다')])),
     h('b',null,'다른 앱에서 사진 보내기'),
