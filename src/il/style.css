@@ -105,3 +105,13 @@ body.touchUI #textEdit,body.touchUI #ilTextEdit{font-size:inherit}
 }
 body.touchUI #toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 @media (max-width:900px){#toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}}
+/* 모바일: 대화상자 전체가 한 번에 스크롤되도록 */
+.dlg .db,.dlg .dps{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;min-height:0}
+#modal{height:100vh;height:100dvh}
+.dlg{max-height:calc(100vh - 12px);max-height:calc(100dvh - 12px)}
+@media (max-width:700px){
+  .ndoc{min-height:0}
+  .ndoc .cards{max-height:none;overflow:visible;grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  .ndoc .det{border-left:0;border-top:1px solid #3a3a3a}
+  .dlg .df{position:sticky;bottom:0;background:#4b4b4b;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+}

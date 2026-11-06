@@ -1,0 +1,33 @@
+{
+  "name": "IUX Photo",
+  "short_name": "IUX Photo",
+  "description": "브라우저에서 바로 쓰는 사진·PSD·벡터 편집기",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#2b2b2b",
+  "theme_color": "#2b2b2b",
+  "lang": "ko",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "files": [{"name": "file", "accept": ["image/*", "image/vnd.adobe.photoshop", "application/octet-stream", ".psd", ".svg", ".tif", ".tiff"]}]
+    }
+  },
+  "file_handlers": [
+    {"action": "/", "accept": {
+      "image/png": [".png"], "image/jpeg": [".jpg", ".jpeg"], "image/webp": [".webp"], "image/gif": [".gif"],
+      "image/tiff": [".tif", ".tiff"], "image/vnd.adobe.photoshop": [".psd"], "image/svg+xml": [".svg"]
+    }}
+  ]
+}

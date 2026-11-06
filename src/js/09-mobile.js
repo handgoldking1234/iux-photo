@@ -79,6 +79,7 @@ touchGesture($('#ilWork'),{
     B('다시 실행 (세 손가락 탭)',icon('undo'),()=>isIl()?ilRedo():redo(),'flip'),
     B('화면에 맞추기',svg(FIT),()=>isIl()?ilFit():fitView()),
     B('100%',svg(ONE),()=>{if(isIl()){const d=IL.doc;if(d)ilZoomAt(1,ilVW/2,ilVH/2)}else if(doc)setZoom(1,VW/2,VH/2)}),
+    B('다른 앱으로 공유',svg('<path d="M12 15V4M8 8l4-4 4 4M6 11H5v9h14v-9h-1" fill="none" stroke="currentColor" stroke-width="1.6"/>'),()=>shareOut()),
     B('패널 열기/닫기',icon('panel'),()=>document.body.classList.toggle('showPanels'),'pt'));
   document.body.append(bar);
   if(TOUCH_UI)document.body.classList.add('touchUI');
