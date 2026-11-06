@@ -127,6 +127,7 @@ function makeZip(files){const enc=new TextEncoder();const parts=[],cen=[];let of
 /* ===== 저장 (온라인: 다운로드 권한 / 로컬: 바로 저장) ===== */
 const ALLOWED_EXT=['gif','png','jpg','jpeg','webp','zip','svg','pdf','json','txt'];
 const dlReady=(window.claude&&typeof window.claude.use==='function')?window.claude.use('downloads').catch(()=>null):Promise.resolve(null);
+let HITR=1;addEventListener("pointerdown",e=>{HITR=e.pointerType==="touch"?2.2:1},true);
 let ONLINE=!!(window.claude&&window.claude.use);
 async function saveBlob(name,blob){const dl=await dlReady;let ext=(name.split('.').pop()||'').toLowerCase();let fname=name;if(dl){if(!ALLOWED_EXT.includes(ext)){const buf=new Uint8Array(await blob.arrayBuffer());blob=makeZip([{name,data:buf}]);fname=name+'.zip';toast(`온라인에서는 .${ext} 파일을 ZIP으로 감싸 저장합니다. 압축을 풀면 ${name} 이 나옵니다.`,4200)}try{await dl.save({filename:fname,data:blob});toast(`${fname} 저장`);return true}catch(e){const c=e&&e.code;if(c==='declined')toast('저장을 취소했습니다');else if(c==='rate_limited')toast('저장 창이 이미 열려 있습니다. 잠시 후 다시 시도하세요');else toast('이 화면에서는 저장할 수 없습니다 ('+(c||'오류')+')');return false}}const url=URL.createObjectURL(blob);const a=h('a',{href:url,download:fname});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast(`${fname} 저장`);return true}
 function canvasBlob(c,type='image/png',q){return new Promise(r=>c.toBlob(r,type,q))}

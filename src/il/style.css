@@ -65,3 +65,43 @@
 .miniCol.none{background:#fff!important}
 .miniCol.none::before{content:"";position:absolute;left:-2px;right:-2px;top:50%;height:2px;background:#e33;transform:rotate(-45deg)}
 @media (max-width:900px){#ilMain{grid-template-columns:52px minmax(0,1fr)}#ilDock{display:none}#ilPanels{position:fixed;right:0;top:68px;bottom:0;width:min(300px,86vw);z-index:900;box-shadow:-10px 0 30px rgba(0,0,0,.5);display:none}body.showPanels #ilPanels{display:grid}}
+
+/* ===== 모바일 / 터치 ===== */
+#mobBar{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:none;gap:2px;padding:4px;background:rgba(38,38,38,.94);border:1px solid #1d1d1d;border-radius:24px;box-shadow:0 6px 20px rgba(0,0,0,.45);z-index:850}
+#mobBar .mb{width:42px;height:38px;border:0;background:none;color:#e6e6e6;border-radius:19px;display:grid;place-items:center;padding:0}
+#mobBar .mb:active{background:#555}
+#mobBar .mb .i{width:20px;height:20px}
+#mobBar .mb.flip .i{transform:scaleX(-1)}
+body.touchUI #mobBar{display:flex}
+body.touchUI .tbtn{min-height:34px}
+body.touchUI #toolbar .tbtn{width:36px;height:36px}
+body.touchUI #ilTools{grid-template-columns:30px 30px}
+body.touchUI #ilTools .tbtn{width:30px;height:34px}
+body.touchUI .dropdown .mi,body.touchUI .flyout .fi{min-height:36px;display:flex;align-items:center}
+body.touchUI .objrow,body.touchUI .lrow{min-height:40px}
+body.touchUI input[type=range]{height:28px}
+body.touchUI .inp,body.touchUI select,body.touchUI textarea{font-size:16px}
+body.touchUI #textEdit,body.touchUI #ilTextEdit{font-size:inherit}
+@media (min-width:901px){body.touchUI #mobBar .pt{display:none}}
+@media (max-width:900px){
+  #ilApp .mright,#ilEnv{display:none}
+  #mobBar{display:flex}
+  #ilPanels,#panels{top:68px;bottom:0;max-height:none}
+}
+@media (max-width:600px){
+  html,body{height:var(--vh,100%)}
+  #app,#ilApp{grid-template-rows:32px 40px minmax(0,1fr)}
+  .mtop{padding:0 7px;height:30px;line-height:30px}
+  .appsw{margin:0 4px}
+  #ilMain{grid-template-columns:64px minmax(0,1fr)}
+  #ilPanels,#panels{top:72px;width:min(340px,92vw)}
+  .dropdown{min-width:min(230px,calc(100vw - 16px));max-width:calc(100vw - 8px)}
+  #modal{padding:6px}
+  .dlg{width:100%!important;max-height:calc(var(--vh,100vh) - 12px)}
+  .dlg .dh{cursor:default}
+  .dlg [style*="220px minmax"]{grid-template-columns:minmax(0,1fr)!important}
+  .dlg [style*="220px minmax"]>:first-child{max-height:170px}
+  .status{gap:8px}
+}
+body.touchUI #toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+@media (max-width:900px){#toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}}
