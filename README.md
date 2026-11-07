@@ -35,3 +35,6 @@ npm run build    # src/ → index.html (오프라인 단일 파일), dist/artifa
 - **파일**: SVG 열기/저장(대지 정보 보존), PNG·JPG 내보내기(대지별·배율), 이미지 가져오기
 - **앱 사이 보내기**: 일러스트 → 포토(새 레이어), 포토 → 일러스트(이미지)
 - AI·EPS 파일은 열 수 없습니다. 일러스트레이터에서 SVG로 저장해 여세요.
+
+## 이어서 작업하기
+결정사항·코드 지도·수정 방법은 [CLAUDE.md](CLAUDE.md), 전체 프로젝트 목록은 [IUX 프로젝트 목록](https://github.com/handgoldking1234/iux-app/blob/main/docs/PROJECTS.md)에 있습니다.
