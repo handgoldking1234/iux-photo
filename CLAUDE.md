@@ -20,7 +20,7 @@ src/style.css, src/body.html        이미지 편집기 화면
 src/il/                             벡터 편집기 화면
 src/js/NN-*.js                      기능 (파일 이름 순서대로 합쳐짐)
   01-util 02-doc(레이어·히스토리) 03-view 04-tools 05-adjust 055-fonts 056-psdlg(포토샵식 대화상자)
-  06-ui 065-text 066-filters 067-adjpanel 07-crossdrag 08/081/082-il(벡터) 09-mobile 095-share 096-guides 99-start
+  06-ui 065-text 066-filters 067-adjpanel 07-crossdrag 08/081/082-il(벡터) 09-mobile 095-share 096-guides(눈금자·안내선) 097-mobile-ux(+메뉴·길게 누르기·붙여넣기) 99-start
 build.py                            src → index.html (오프라인 단일 파일), dist/artifact.html
 index.html                          ★ 빌드 결과 — 직접 고치지 말 것
 sw.js, manifest.webmanifest         PWA
