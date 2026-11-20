@@ -277,7 +277,8 @@ body.easy.ezOpt #app{grid-template-rows:44px minmax(0,1fr)}
 body.easy #main{grid-template-columns:minmax(0,1fr)!important}
 body.easy #center{grid-template-rows:minmax(0,1fr)}
 body.easy #work{background:#161616}
-body.easy #panels{top:calc(52px + env(safe-area-inset-top,0px));bottom:calc(78px + env(safe-area-inset-bottom,0px));border-radius:12px 0 0 12px}
+body.easy #panels{position:fixed;right:0;top:calc(52px + env(safe-area-inset-top,0px));bottom:calc(78px + env(safe-area-inset-bottom,0px));width:min(320px,88vw);z-index:900;box-shadow:-10px 0 30px rgba(0,0,0,.5);border-radius:12px 0 0 12px;display:none}
+body.easy.showPanels #panels{display:grid}
 body.easy #ezTop{display:flex;position:fixed;left:0;right:0;top:0;z-index:950;height:calc(52px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 8px 0;align-items:center;gap:2px;background:#1f1f1f;border-bottom:1px solid #2c2c2c}
 body.easy #ezBar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:950;height:calc(78px + env(safe-area-inset-bottom,0px));padding:6px 6px env(safe-area-inset-bottom,0px);gap:2px;background:#1f1f1f;border-top:1px solid #2c2c2c;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;scroll-snap-type:x proximity}
 #ezBar::-webkit-scrollbar{display:none}
@@ -294,7 +295,7 @@ body.easy #ezBar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:950
 .ezT .ic,.ezT .ic svg{display:block;width:25px;height:25px}
 .ezT .lb{font:500 11.5px/1 var(--ui);white-space:nowrap;letter-spacing:-.2px}
 .ezT:first-child .ic{color:#ff6b9a}
-#mobBar .mb.ezBack{width:auto;padding:0 12px;font:600 12.5px var(--ui);color:#fff;background:#444}
+#mobBar .mb.ezBack{width:auto;min-width:52px;white-space:nowrap;padding:0 12px;font:600 12.5px var(--ui);color:#fff;background:#444}
 
 /* 전체 화면 편집기 */
 .ezStudio{position:fixed;inset:0;z-index:2400;background:#111;display:grid;grid-template-rows:auto minmax(0,1fr) auto;color:#eee;font-family:var(--ui);touch-action:none;user-select:none;-webkit-user-select:none}
@@ -352,3 +353,8 @@ body.easy #ezBar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:950
 .ezCol{width:36px;height:36px;border-radius:50%;border:2px solid #555;padding:0;position:relative;display:grid;place-items:center;color:#fff;font:600 18px var(--ui);background:#444;overflow:hidden}
 .ezColPick input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
 @media (min-width:560px){.ezsFoot{padding-left:max(12px,calc(50% - 280px));padding-right:max(12px,calc(50% - 280px))}}
+
+.ezSwitchBtn{flex:none;margin:0 6px 0 auto;height:22px;padding:0 10px 0 7px;border:0;border-radius:11px;background:#2f87e6;color:#fff;display:flex;align-items:center;gap:5px;font:600 11.5px var(--ui);cursor:pointer;white-space:nowrap}
+.ezSwitchBtn:hover{background:#4596ef}
+.ezSwitchBtn .ic,.ezSwitchBtn .ic svg{display:block;width:14px;height:14px}
+.ezSwitchBtn[hidden]{display:none}

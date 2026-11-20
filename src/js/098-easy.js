@@ -57,12 +57,16 @@ const EZ_ITEMS=[
   ['erase','지우개',()=>ezNeedDoc()&&ezPickTool('eraser','지울 곳을 문지르세요')],
   ['move','크기·위치',()=>ezNeedDoc()&&ezMoveTool()],
   ['layers','레이어',()=>{document.body.classList.toggle('showPanels')}],
-  ['pro','전문가 모드',()=>ezSet(false,true)],
+  ['pro','포토샵 모드',()=>ezSet(false,true)],
 ];
 for(const [k,t,fn] of EZ_ITEMS)ezBar.append(ezB('ezT',EZI[k],t,()=>{closeMenus();ezToolDone();fn()}));
 document.body.append(ezTop,ezBar);
-// 전문가 모드에서 간편 모드로 돌아오는 버튼
-(function(){const bar=$('#mobBar');if(bar)bar.append(h('button',{class:'mb ezBack',title:'간편 모드','aria-label':'간편 모드',onclick:e=>{e.stopPropagation();ezSet(true,true)}},'간편'))})();
+// 포토샵 화면에서 간편 모드로 바꾸는 버튼 (위 메뉴 막대 오른쪽 + 휴대폰 아래 막대)
+(function(){
+  const go=e=>{e.stopPropagation();closeMenus();ezSet(true,true)};
+  const mb=$('#menubar');if(mb)mb.append(h('button',{class:'ezSwitchBtn',id:'ezSwitchBtn',title:'간편 모드: 컷아웃·배경 바꾸기·필터 등 쉬운 화면','aria-label':'간편 모드로 바꾸기',onclick:go},h('span',{class:'ic',html:EZI.cut}),h('span',null,'간편 모드')));
+  const bar=$('#mobBar');if(bar)bar.append(h('button',{class:'mb ezBack',title:'간편 모드','aria-label':'간편 모드',onclick:go},'간편'));
+})();
 
 function ezPickTool(id,msg){if(!TOOLS[id]){toast('이 도구를 찾지 못했습니다');return}setTool(id);document.body.classList.add('ezOpt');ezRelayout();ezDoneBtn(true);if(msg)toast(msg,2200)}
 function ezMoveTool(){if(!doc.active){toast('레이어를 먼저 고르세요');return}if(doc.active.isBg&&flat().filter(l=>l.type!=='group').length===1){toast('배경 하나뿐이라 옮길 것이 없습니다. "사진 합성"으로 사진을 더해 보세요',3000);return}setTool('move');try{startTransform()}catch(e){}ezDoneBtn(true);toast('모서리를 끌어 크기, 위의 둥근 손잡이로 회전합니다',2600)}
@@ -76,14 +80,16 @@ function ezSet(on,user){
   if(user)try{localStorage.setItem('iuxEasy',on?'1':'0')}catch(e){}
   EZ.on=on;document.body.classList.toggle('easy',want);document.body.classList.remove('ezOpt','showPanels');ezDone.hidden=true;
   ezRelayout();setTimeout(()=>{try{if(doc)fitView()}catch(e){}},80);
-  if(user)toast(on?'간편 모드':'전문가 모드 — 아래 "간편" 버튼으로 돌아옵니다',1800);
+  if(user)toast(on?'간편 모드 — 맨 끝 "포토샵 모드"로 돌아갑니다':'포토샵 모드 — "간편 모드" 버튼으로 다시 바꿀 수 있습니다',2200);
 }
 function ezTitleUpdate(){ezTitle.textContent=doc?(doc.name||'제목 없음'):'IUX Photo'}
 (function(){
   let pref=null;try{pref=localStorage.getItem('iuxEasy')}catch(e){}
-  const start=pref==='1'||(pref!=='0'&&TOUCH_UI&&Math.min(innerWidth,innerHeight)<=700);
+  // 기본은 포토샵 화면. 간편 모드는 버튼으로 켤 때만 (주소 끝에 ?easy 를 붙여도 켜짐)
+  const q=/[?&#]easy\b/.test(location.search+location.hash);
+  const start=q||pref==='1';
   ezSet(start,false);
-  const _sw=switchApp;switchApp=function(a){_sw(a);document.body.classList.toggle('easy',EZ.on&&APP==='photo');ezRelayout()};
+  const _sw=switchApp;switchApp=function(a){_sw(a);const sb=$('#ezSwitchBtn');if(sb)sb.hidden=APP!=='photo';document.body.classList.toggle('easy',EZ.on&&APP==='photo');ezRelayout()};
   const _ra=refreshAll;refreshAll=function(){_ra.apply(this,arguments);ezTitleUpdate()};
   setInterval(ezTitleUpdate,1500);
 })();

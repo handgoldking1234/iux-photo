@@ -282,7 +282,8 @@ body.easy.ezOpt #app{grid-template-rows:44px minmax(0,1fr)}
 body.easy #main{grid-template-columns:minmax(0,1fr)!important}
 body.easy #center{grid-template-rows:minmax(0,1fr)}
 body.easy #work{background:#161616}
-body.easy #panels{top:calc(52px + env(safe-area-inset-top,0px));bottom:calc(78px + env(safe-area-inset-bottom,0px));border-radius:12px 0 0 12px}
+body.easy #panels{position:fixed;right:0;top:calc(52px + env(safe-area-inset-top,0px));bottom:calc(78px + env(safe-area-inset-bottom,0px));width:min(320px,88vw);z-index:900;box-shadow:-10px 0 30px rgba(0,0,0,.5);border-radius:12px 0 0 12px;display:none}
+body.easy.showPanels #panels{display:grid}
 body.easy #ezTop{display:flex;position:fixed;left:0;right:0;top:0;z-index:950;height:calc(52px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 8px 0;align-items:center;gap:2px;background:#1f1f1f;border-bottom:1px solid #2c2c2c}
 body.easy #ezBar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:950;height:calc(78px + env(safe-area-inset-bottom,0px));padding:6px 6px env(safe-area-inset-bottom,0px);gap:2px;background:#1f1f1f;border-top:1px solid #2c2c2c;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;scroll-snap-type:x proximity}
 #ezBar::-webkit-scrollbar{display:none}
@@ -299,7 +300,7 @@ body.easy #ezBar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:950
 .ezT .ic,.ezT .ic svg{display:block;width:25px;height:25px}
 .ezT .lb{font:500 11.5px/1 var(--ui);white-space:nowrap;letter-spacing:-.2px}
 .ezT:first-child .ic{color:#ff6b9a}
-#mobBar .mb.ezBack{width:auto;padding:0 12px;font:600 12.5px var(--ui);color:#fff;background:#444}
+#mobBar .mb.ezBack{width:auto;min-width:52px;white-space:nowrap;padding:0 12px;font:600 12.5px var(--ui);color:#fff;background:#444}
 
 /* 전체 화면 편집기 */
 .ezStudio{position:fixed;inset:0;z-index:2400;background:#111;display:grid;grid-template-rows:auto minmax(0,1fr) auto;color:#eee;font-family:var(--ui);touch-action:none;user-select:none;-webkit-user-select:none}
@@ -357,6 +358,11 @@ body.easy #ezBar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:950
 .ezCol{width:36px;height:36px;border-radius:50%;border:2px solid #555;padding:0;position:relative;display:grid;place-items:center;color:#fff;font:600 18px var(--ui);background:#444;overflow:hidden}
 .ezColPick input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
 @media (min-width:560px){.ezsFoot{padding-left:max(12px,calc(50% - 280px));padding-right:max(12px,calc(50% - 280px))}}
+
+.ezSwitchBtn{flex:none;margin:0 6px 0 auto;height:22px;padding:0 10px 0 7px;border:0;border-radius:11px;background:#2f87e6;color:#fff;display:flex;align-items:center;gap:5px;font:600 11.5px var(--ui);cursor:pointer;white-space:nowrap}
+.ezSwitchBtn:hover{background:#4596ef}
+.ezSwitchBtn .ic,.ezSwitchBtn .ic svg{display:block;width:14px;height:14px}
+.ezSwitchBtn[hidden]{display:none}
 /* ===== 앱 전환 + 일러스트 화면 ===== */
 .appsw{display:flex;gap:3px;margin:0 8px 0 6px;flex:none}
 .appsw button{width:24px;height:20px;border-radius:3px;border:1px solid transparent;font:700 10px/18px var(--ui);padding:0;cursor:default;letter-spacing:-.3px;opacity:.55}
@@ -25279,12 +25285,16 @@ const EZ_ITEMS=[
   ['erase','지우개',()=>ezNeedDoc()&&ezPickTool('eraser','지울 곳을 문지르세요')],
   ['move','크기·위치',()=>ezNeedDoc()&&ezMoveTool()],
   ['layers','레이어',()=>{document.body.classList.toggle('showPanels')}],
-  ['pro','전문가 모드',()=>ezSet(false,true)],
+  ['pro','포토샵 모드',()=>ezSet(false,true)],
 ];
 for(const [k,t,fn] of EZ_ITEMS)ezBar.append(ezB('ezT',EZI[k],t,()=>{closeMenus();ezToolDone();fn()}));
 document.body.append(ezTop,ezBar);
-// 전문가 모드에서 간편 모드로 돌아오는 버튼
-(function(){const bar=$('#mobBar');if(bar)bar.append(h('button',{class:'mb ezBack',title:'간편 모드','aria-label':'간편 모드',onclick:e=>{e.stopPropagation();ezSet(true,true)}},'간편'))})();
+// 포토샵 화면에서 간편 모드로 바꾸는 버튼 (위 메뉴 막대 오른쪽 + 휴대폰 아래 막대)
+(function(){
+  const go=e=>{e.stopPropagation();closeMenus();ezSet(true,true)};
+  const mb=$('#menubar');if(mb)mb.append(h('button',{class:'ezSwitchBtn',id:'ezSwitchBtn',title:'간편 모드: 컷아웃·배경 바꾸기·필터 등 쉬운 화면','aria-label':'간편 모드로 바꾸기',onclick:go},h('span',{class:'ic',html:EZI.cut}),h('span',null,'간편 모드')));
+  const bar=$('#mobBar');if(bar)bar.append(h('button',{class:'mb ezBack',title:'간편 모드','aria-label':'간편 모드',onclick:go},'간편'));
+})();
 
 function ezPickTool(id,msg){if(!TOOLS[id]){toast('이 도구를 찾지 못했습니다');return}setTool(id);document.body.classList.add('ezOpt');ezRelayout();ezDoneBtn(true);if(msg)toast(msg,2200)}
 function ezMoveTool(){if(!doc.active){toast('레이어를 먼저 고르세요');return}if(doc.active.isBg&&flat().filter(l=>l.type!=='group').length===1){toast('배경 하나뿐이라 옮길 것이 없습니다. "사진 합성"으로 사진을 더해 보세요',3000);return}setTool('move');try{startTransform()}catch(e){}ezDoneBtn(true);toast('모서리를 끌어 크기, 위의 둥근 손잡이로 회전합니다',2600)}
@@ -25298,14 +25308,16 @@ function ezSet(on,user){
   if(user)try{localStorage.setItem('iuxEasy',on?'1':'0')}catch(e){}
   EZ.on=on;document.body.classList.toggle('easy',want);document.body.classList.remove('ezOpt','showPanels');ezDone.hidden=true;
   ezRelayout();setTimeout(()=>{try{if(doc)fitView()}catch(e){}},80);
-  if(user)toast(on?'간편 모드':'전문가 모드 — 아래 "간편" 버튼으로 돌아옵니다',1800);
+  if(user)toast(on?'간편 모드 — 맨 끝 "포토샵 모드"로 돌아갑니다':'포토샵 모드 — "간편 모드" 버튼으로 다시 바꿀 수 있습니다',2200);
 }
 function ezTitleUpdate(){ezTitle.textContent=doc?(doc.name||'제목 없음'):'IUX Photo'}
 (function(){
   let pref=null;try{pref=localStorage.getItem('iuxEasy')}catch(e){}
-  const start=pref==='1'||(pref!=='0'&&TOUCH_UI&&Math.min(innerWidth,innerHeight)<=700);
+  // 기본은 포토샵 화면. 간편 모드는 버튼으로 켤 때만 (주소 끝에 ?easy 를 붙여도 켜짐)
+  const q=/[?&#]easy\b/.test(location.search+location.hash);
+  const start=q||pref==='1';
   ezSet(start,false);
-  const _sw=switchApp;switchApp=function(a){_sw(a);document.body.classList.toggle('easy',EZ.on&&APP==='photo');ezRelayout()};
+  const _sw=switchApp;switchApp=function(a){_sw(a);const sb=$('#ezSwitchBtn');if(sb)sb.hidden=APP!=='photo';document.body.classList.toggle('easy',EZ.on&&APP==='photo');ezRelayout()};
   const _ra=refreshAll;refreshAll=function(){_ra.apply(this,arguments);ezTitleUpdate()};
   setInterval(ezTitleUpdate,1500);
 })();
