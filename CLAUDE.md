@@ -12,6 +12,7 @@
 | 파일 | PSD 열기·저장(레이어 구조 보존), 이미지 저장. 파일은 서버로 안 올라감 |
 | 글꼴 | 기본 Pretendard. 글꼴 추가는 **웹 주소** 방식 |
 | 회전 커서 | ScanQC(iux-qc)에서 쓴 아이콘 |
+| 휴대폰 화면 | 터치 + 화면 짧은 변 700px 이하면 **간편 모드**(아래 큰 도구 막대 + 전체 화면 편집기). '전문가 모드'로 원래 화면, 선택은 localStorage `iuxEasy`에 기억 |
 | 배포물 | `index.html` 단일 파일(오프라인 동작, 라이브러리 내장) |
 
 ## 파일
@@ -20,7 +21,7 @@ src/style.css, src/body.html        이미지 편집기 화면
 src/il/                             벡터 편집기 화면
 src/js/NN-*.js                      기능 (파일 이름 순서대로 합쳐짐)
   01-util 02-doc(레이어·히스토리) 03-view 04-tools 05-adjust 055-fonts 056-psdlg(포토샵식 대화상자)
-  06-ui 065-text 066-filters 067-adjpanel 07-crossdrag 08/081/082-il(벡터) 09-mobile 095-share 096-guides(눈금자·안내선) 097-mobile-ux(+메뉴·길게 누르기·붙여넣기) 99-start
+  06-ui 065-text 066-filters 067-adjpanel 07-crossdrag 08/081/082-il(벡터) 09-mobile 095-share 096-guides(눈금자·안내선) 097-mobile-ux(+메뉴·길게 누르기·붙여넣기) 098-easy(휴대폰 간편 모드: 컷아웃·배경 바꾸기·사진 합성·자르기·회전·필터·보정) 99-start
 build.py                            src → index.html (오프라인 단일 파일), dist/artifact.html
 index.html                          ★ 빌드 결과 — 직접 고치지 말 것
 sw.js, manifest.webmanifest         PWA
