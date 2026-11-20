@@ -358,3 +358,16 @@ body.easy #ezBar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:950
 .ezSwitchBtn:hover{background:#4596ef}
 .ezSwitchBtn .ic,.ezSwitchBtn .ic svg{display:block;width:14px;height:14px}
 .ezSwitchBtn[hidden]{display:none}
+
+/* 손가락 자유 변형 */
+#ttBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:960;display:flex;gap:2px;padding:4px;background:rgba(30,30,30,.96);border:1px solid #111;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:calc(100vw - 16px)}
+#ttBar[hidden]{display:none}
+.ttB{width:54px;height:52px;border:0;border-radius:12px;background:none;color:#e8e8e8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0;font:500 11px var(--ui)}
+.ttB:active{background:#3a3a3a}
+.ttB .ic,.ttB .ic svg{display:block;width:22px;height:22px}
+.ttB.ttDel{color:#ff6b8a}
+.ttB.ttOk{background:#2f87e6;color:#fff}
+body.ttActive #mobBar{display:none!important}
+body.ttActive .ezDone{display:none!important}
+#ttBadge{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:960;padding:5px 12px;border-radius:14px;background:rgba(0,0,0,.75);color:#fff;font:600 12.5px var(--ui);font-variant-numeric:tabular-nums;pointer-events:none;white-space:pre}
+#ttBadge[hidden]{display:none}

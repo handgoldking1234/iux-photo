@@ -1,5 +1,5 @@
 /* ===== 도구 ===== */
-const opts={size:40,hard:.85,opacity:1,flow:1,spacing:.12,selMode:'new',feather:0,tol:32,contiguous:true,sampleAll:false,antialias:true,gradType:'linear',gradTarget:'fgbg',gradReverse:false,strength:.5,cropDelete:true,autoSelect:false,lineW:4,font:'Pretendard',fontSize:48,bold:false,italic:false,align:'left',textColor:null,healSample:'content',dodgeRange:'mid',spongeMode:'desat',fixedRatio:'',sampleSize:1,cloneAligned:true,cloneAll:false};
+const opts={size:40,hard:.85,opacity:1,flow:1,spacing:.12,selMode:'new',feather:0,tol:32,contiguous:true,sampleAll:false,antialias:true,gradType:'linear',gradTarget:'fgbg',gradReverse:false,strength:.5,cropDelete:true,autoSelect:true,lineW:4,font:'Pretendard',fontSize:48,bold:false,italic:false,align:'left',textColor:null,healSample:'content',dodgeRange:'mid',spongeMode:'desat',fixedRatio:'',sampleSize:1,cloneAligned:true,cloneAll:false};
 let fg='#000000',bg='#ffffff';
 let tool=null,transient=null,spaceDown=false,drag=null;
 

@@ -59,7 +59,7 @@ function longPressMenu(host,isIl){
   let t=null,st=null,h0=0;const clear=()=>{clearTimeout(t);t=null};
   host.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch'||!e.isPrimary){clear();return}if(e.target.closest('.rg,.rgCorner'))return;
     st={x:e.clientX,y:e.clientY,e};h0=isIl?(IL.doc?IL.doc.hi:0):(doc?doc.hIndex:0);clear();
-    t=setTimeout(()=>{t=null;fire(st)},560)},true);
+    t=setTimeout(()=>{t=null;if(typeof ttBlockLong==='function'&&ttBlockLong())return;fire(st)},560)},true);
   host.addEventListener('pointermove',e=>{if(t&&st&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>9)clear()},true);
   const end=()=>clear();host.addEventListener('pointerup',end,true);host.addEventListener('pointercancel',end,true);
   function fire(s){
