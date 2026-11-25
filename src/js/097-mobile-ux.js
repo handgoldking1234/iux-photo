@@ -43,7 +43,7 @@ function addSheet(){
     h('div',{class:'sheetGrid'},
       it(I.img,'사진 넣기',()=>pickFiles(false)),it(I.cam,'카메라',()=>pickFiles(true)),it(I.paste,'붙여넣기',systemPaste),it(I.copy,'복사',systemCopy,!H),
       it(I.neu,'새 문서',()=>isIL()?ilNewDlg():newDocDlg()),it(I.open,'파일 열기',()=>isIL()?$('#ilFileIn').click():$('#fileIn').click()),
-      it(I.save,isIL()?'SVG 저장':'저장',()=>isIL()?ilSaveSvg():savePsd(),!H),it(I.share,'다른 앱으로',shareOut,!H),
+      it(I.save,isIL()?'SVG 저장':'저장',()=>isIL()?ilSaveSvg():(typeof ezSaveSheet==='function'?ezSaveSheet():savePsd()),!H),it(I.share,'다른 앱으로',shareOut,!H),
       it(I.swap,isIL()?'Photo로':'Illust로',()=>switchApp(isIL()?'photo':'illust')),it(I.help,'사용법',mobileHelp))));
   function close(){ov.remove()}
   document.body.append(ov);
